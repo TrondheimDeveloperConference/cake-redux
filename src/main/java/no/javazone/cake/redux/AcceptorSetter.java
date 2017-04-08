@@ -1,7 +1,6 @@
 package no.javazone.cake.redux;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -138,12 +137,9 @@ public class AcceptorSetter {
         mail.setSubject(subject);
 
         if (Configuration.useMailSSL()) {
-            mail.setSSLOnConnect(true);
-            mail.setSslSmtpPort(String.valueOf(Configuration.smtpPort()));
-        } else {
-            mail.setSmtpPort(Configuration.smtpPort());
-
+            mail.setStartTLSEnabled(true);
         }
+        mail.setSmtpPort(Configuration.smtpPort());
         String mailUser = Configuration.mailUser();
         if (mailUser != null) {
             mail.setAuthentication(mailUser, Configuration.mailPassword());
