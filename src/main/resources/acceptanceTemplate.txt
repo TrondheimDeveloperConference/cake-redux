@@ -1,4 +1,4 @@
-Dear #speakername#,
+Dear #speakername#
 
 We are pleased to inform you that your #talkType#, "#title#", has been accepted for Trondheim Developer Conference 2017!
 
@@ -29,26 +29,13 @@ You can update your talk here:
 
 #submititLink#
 
+If you want to present from a computer we provide please send us the slides on email with the subject «TDC2017 talk».
 
-OTHER PRACTICAL INFORMATION
------------------------------------
-
-1) Reimbursements:
-There is a very limited budget for reimbursing travelling costs. This e-mail does not automatically make you eligible for reimbursements. Please see https://2017.trondheimdc.no/monetarypolicy.html for information about how you can apply for these.
-
-2) Tickets:
-As stated at https://2017.javazone.no/speakers.html speakers of lightning talks will have to provide for their own admission to Javazone.
-
-4) Speakers workshop:
-We'll be running a Speaker Workshop on the 26th August in Oslo. Here you'll get a free course in presentation technique, along with lots of useful practical information about speaking at JavaZone. To register (and for more information about the event) visit http://www.meetup.com/javaBin/events/223393995.
-
-For more information, see: https://2017.trondheimdc.no/speakers.html
-
-
+For more information, see: https://2017.trondheimdc.no/speaker.html
 
 If you have any more questions, reply to this email. Please be aware that the response time on emails during the summer holidays (in July) will be longer than normal.
 
-If you have any questions regarding the conference, please feel free to contact the Programme Committee at connect@trondheimdc.no.
+If you have any questions regarding the conference, please feel free to contact the programme committee at connect@trondheimdc.no.
 
 
 Best regards,
