@@ -239,8 +239,7 @@ public class EmsCommunicator {
         String url = Base64Util.decode(encodedUrl);
         URLConnection connection = openConnection(url, true);
 
-        try {
-            InputStream is = openStream(connection);
+        try (InputStream is = openStream(connection)){
             Item talkItem = new CollectionParser().parse(is).getFirstItem().get();
             JsonObject jsonObject = readTalk(url,talkItem, connection);
             String submititLocation = Configuration.submititLocation() + encodedUrl;

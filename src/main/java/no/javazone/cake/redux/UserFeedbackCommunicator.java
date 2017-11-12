@@ -9,17 +9,20 @@ public class UserFeedbackCommunicator {
     public String feedback(String emsFeedbackUrl) {
         String urlToDevNull = convertFromEmsToDevNullUrl(emsFeedbackUrl);
         URLConnection urlConnection = CommunicatorHelper.openConnection(urlToDevNull, false);
-        try {
-            InputStream is = CommunicatorHelper.openStream(urlConnection);
-            return CommunicatorHelper.toString(is);
+        try (InputStream is = CommunicatorHelper.openStream(urlConnection)){
+            String s = CommunicatorHelper.toString(is);
+            System.out.println(s);
+            return s;
         } catch (IOException ignore) {
+            System.out.println(ignore);
         }
         return null;
     }
 
     private String convertFromEmsToDevNullUrl(String encEmsUrl) {
         String emsUrl = Base64Util.decode(encEmsUrl);
-        return emsUrl.replaceAll("\\/ems\\/", "/devnull/") + "/feedbacks";
+        String path = emsUrl.substring(emsUrl.indexOf("/events"));
+        return "http://devnull-app:5432/devnull" + path + "/feedbacks";
     }
 
 }

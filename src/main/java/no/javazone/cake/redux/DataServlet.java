@@ -239,7 +239,7 @@ public class DataServlet extends HttpServlet {
     public void init() throws ServletException {
         emsCommunicator = new EmsCommunicator();
         userFeedbackCommunicator = new UserFeedbackCommunicator();
-        acceptorSetter = new AcceptorSetter(emsCommunicator);
+        acceptorSetter = new AcceptorSetter(emsCommunicator, userFeedbackCommunicator);
     }
 
     public void setEmsCommunicator(EmsCommunicator emsCommunicator) {

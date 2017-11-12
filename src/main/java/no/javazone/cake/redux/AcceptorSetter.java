@@ -10,6 +10,7 @@ import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.JsonObject;
+import org.jsonbuddy.parse.JsonParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,10 +22,12 @@ import java.util.Optional;
 
 public class AcceptorSetter {
     private EmsCommunicator emsCommunicator;
+    private UserFeedbackCommunicator userFeedbackCommunicator;
 
 
-    public AcceptorSetter(EmsCommunicator emsCommunicator) {
+    public AcceptorSetter(EmsCommunicator emsCommunicator, UserFeedbackCommunicator userFeedbackCommunicator) {
         this.emsCommunicator = emsCommunicator;
+        this.userFeedbackCommunicator = userFeedbackCommunicator;
     }
 
     public String accept(ArrayNode talks,UserAccessType userAccessType) {
@@ -63,6 +66,14 @@ public class AcceptorSetter {
             try {
                 String encodedTalkRef = talks.get(i).get("ref").asText();
                 JsonObject jsonTalk = emsCommunicator.oneTalkAsJson(encodedTalkRef);
+
+                String feedback = userFeedbackCommunicator.feedback(encodedTalkRef);
+                JsonObject jsonFeedback = JsonParser.parseToObject(feedback);
+                JsonObject paperfeedback = jsonFeedback.requiredObject("session").requiredObject("paper");
+                long green = paperfeedback.requiredLong("green");
+                long red = paperfeedback.requiredLong("red");
+                accept.put("papergreen", green);
+                accept.put("paperred", red);
 
                 accept.put("title",jsonTalk.requiredString("title"));
 
@@ -180,6 +191,18 @@ public class AcceptorSetter {
         message = replaceAll(message,"#talkType#", talkType);
         message = replaceAll(message,"#submititLink#", submitLink);
         message = replaceAll(message,"#confirmLink#", confirmLocation);
+
+        Optional<Long> paperred = jsonTalk.longValue("paperred");
+        Optional<Long> papergreen = jsonTalk.longValue("papergreen");
+        if(papergreen.isPresent() && paperred.isPresent()) {
+            long mehCount = paperred.get();
+            long awesomeCount = papergreen.get();
+            long total = mehCount + awesomeCount;
+            long mehRatio = (mehCount / total) * 100;
+            long awesomeRatio = (awesomeCount / total) * 100;
+            message = replaceAll(message,"#paperred#", String.valueOf(mehRatio));
+            message = replaceAll(message,"#papergreen#", String.valueOf(awesomeRatio));
+        }
 
         for (int pos=message.indexOf("#");pos!=-1;pos=message.indexOf("#",pos+1)) {
             if (pos == message.length()-1) {
