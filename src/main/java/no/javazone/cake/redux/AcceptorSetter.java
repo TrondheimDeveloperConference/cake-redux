@@ -68,12 +68,17 @@ public class AcceptorSetter {
                 JsonObject jsonTalk = emsCommunicator.oneTalkAsJson(encodedTalkRef);
 
                 String feedback = userFeedbackCommunicator.feedback(encodedTalkRef);
-                JsonObject jsonFeedback = JsonParser.parseToObject(feedback);
-                JsonObject paperfeedback = jsonFeedback.requiredObject("session").requiredObject("paper");
-                long green = paperfeedback.requiredLong("green");
-                long red = paperfeedback.requiredLong("red");
-                accept.put("papergreen", green);
-                accept.put("paperred", red);
+                if (feedback != null) {
+                    JsonObject jsonFeedback = JsonParser.parseToObject(feedback);
+                    JsonObject paperfeedback = jsonFeedback.requiredObject("session").requiredObject("paper");
+                    long green = paperfeedback.requiredLong("green");
+                    long red = paperfeedback.requiredLong("red");
+                    System.out.println("Green " + green + " red " + red);
+                    jsonTalk.put("papergreen", green);
+                    jsonTalk.put("paperred", red);
+                } else {
+                    System.out.println("No feedback");
+                }
 
                 accept.put("title",jsonTalk.requiredString("title"));
 
@@ -194,12 +199,16 @@ public class AcceptorSetter {
 
         Optional<Long> paperred = jsonTalk.longValue("paperred");
         Optional<Long> papergreen = jsonTalk.longValue("papergreen");
+        System.out.println(paperred + " red");
+        System.out.println(papergreen + " green");
         if(papergreen.isPresent() && paperred.isPresent()) {
             long mehCount = paperred.get();
             long awesomeCount = papergreen.get();
-            long total = mehCount + awesomeCount;
-            long mehRatio = (mehCount / total) * 100;
-            long awesomeRatio = (awesomeCount / total) * 100;
+            double total = mehCount + awesomeCount;
+            long mehRatio = (long)((mehCount / total) * 100);
+            long awesomeRatio = 100 - mehRatio;
+            System.out.println(mehRatio + " red");
+            System.out.println(awesomeRatio + " green");
             message = replaceAll(message,"#paperred#", String.valueOf(mehRatio));
             message = replaceAll(message,"#papergreen#", String.valueOf(awesomeRatio));
         }

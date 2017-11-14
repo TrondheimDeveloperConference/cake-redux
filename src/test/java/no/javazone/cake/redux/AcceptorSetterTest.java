@@ -8,7 +8,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AcceptorSetterTest {
-    private AcceptorSetter acceptorSetter = new AcceptorSetter(null);
+    private AcceptorSetter acceptorSetter = new AcceptorSetter(null, null);
 
     @Test
     public void shouldGenerateMessage() throws Exception {
