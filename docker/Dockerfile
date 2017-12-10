@@ -1,4 +1,4 @@
-FROM java:8
+FROM openjdk:8
 EXPOSE 8082
 ADD config /
 ADD cake-redux.jar /
