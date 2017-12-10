@@ -1,6 +1,6 @@
 Dear #speakername#
 
-We are pleased to inform you that your #talkType#, "#title#", has been accepted for Trondheim Developer Conference 2017!
+We are pleased to inform you that your #talkType#, "#title#", has been accepted for Trondheim Developer Conference 2018!
 
 
 CONFIRM YOUR TALK
@@ -12,13 +12,13 @@ Please use the link below to confirm that you will be attending Trondheim Develo
 
 Remember to confirm as soon as possible! If you know that you unable to attend, please inform us by sending a reply to this email.
 
-Note that this #talkType# is accepted based upon both content and presenter. We do not accept substitute speakers.
+Note that this #talkType# is accepted based upon both content and presenter as described in the original submission. We do not accept substitute speakers.
 
 
 UPDATING YOUR TALK
 -----------------------------------
 
-Once you have confirmed that you are attending, we will publish your #talkType# in the agenda at https://2017.trondheimdc.no.
+Once you have confirmed that you are attending, we will publish your #talkType# in the agenda at https://2018.trondheimdc.no.
 You can continue to edit your abstract and should therefore make sure that the following parts are updated via the below link:
 
 1) Be sure to upload a good quality picture or portrait so that people know what you look like!
@@ -27,11 +27,15 @@ You can continue to edit your abstract and should therefore make sure that the f
 
 You can update your talk here: 
 
-#submititLink#
+https://submit.trondheimdc.no
 
-If you want to present from a computer we provide please send us the slides on email with the subject «TDC2017 talk».
+OTHER PRACTICAL INFORMATION
+-----------------------------------
+If you want to present from a computer we provide please send us the slides on email with the subject «TDC2018 talk».
 
-For more information, see: https://2017.trondheimdc.no/speaker.html
+For more information, see: https://2018.trondheimdc.no/speaker
+
+As a speaker you do not need to buy a ticket. You will get your ticket at the speakers dinner or when arriving at the conference.
 
 If you have any more questions, reply to this email. Please be aware that the response time on emails during the summer holidays (in July) will be longer than normal.
 

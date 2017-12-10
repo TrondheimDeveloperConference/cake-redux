@@ -3,26 +3,27 @@ package no.javazone.cake.redux;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.util.Optional;
 
 public class UserFeedbackCommunicator {
 
-    public String feedback(String emsFeedbackUrl) {
-        String urlToDevNull = convertFromEmsToDevNullUrl(emsFeedbackUrl);
-        URLConnection urlConnection = CommunicatorHelper.openConnection(urlToDevNull, false);
-        try (InputStream is = CommunicatorHelper.openStream(urlConnection)){
-            String s = CommunicatorHelper.toString(is);
-            System.out.println(s);
-            return s;
-        } catch (IOException ignore) {
-            System.out.println(ignore);
+    public Optional<String> feedback(Optional<String> emslocation) {
+        if (!emslocation.isPresent()) {
+            return Optional.empty();
         }
-        return null;
+
+        String urlToDevNull = convertFromEmsToDevNullUrl(emslocation.get());
+        URLConnection urlConnection = CommunicatorHelper.openConnection(urlToDevNull, false);
+        try {
+            InputStream is = CommunicatorHelper.openStream(urlConnection);
+            return Optional.of(CommunicatorHelper.toString(is));
+        } catch (IOException ignore) {
+            return Optional.empty();
+        }
     }
 
-    private String convertFromEmsToDevNullUrl(String encEmsUrl) {
-        String emsUrl = Base64Util.decode(encEmsUrl);
-        String path = emsUrl.substring(emsUrl.indexOf("/events"));
-        return "http://devnull-app:5432/devnull" + path + "/feedbacks";
+    private String convertFromEmsToDevNullUrl(String emsUrl) {
+        return emsUrl.replaceAll("\\/ems\\/", "/devnull/") + "/feedbacks";
     }
 
 }

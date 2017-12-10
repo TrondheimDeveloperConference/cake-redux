@@ -1,7 +1,9 @@
 package no.javazone.cake.redux;
 
+import no.javazone.cake.redux.mail.MailSenderImplementation;
 import no.javazone.cake.redux.mail.MailSenderService;
 import no.javazone.cake.redux.mail.SmtpMailSender;
+import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.jsonbuddy.JsonArray;
@@ -16,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class SpeakerMailSender {
     private final String msg;
-    private EmsCommunicator emsCommunicator = new EmsCommunicator();
+    private SleepingpillCommunicator sleepingpillCommunicator = new SleepingpillCommunicator();
 
     public SpeakerMailSender() throws IOException {
         msg = CommunicatorHelper.toString(getClass().getClassLoader().getResourceAsStream("speakerInvMail.txt"));
@@ -57,7 +59,7 @@ public class SpeakerMailSender {
     }
 
     public Set<String> allMailsFrom(String event) {
-        String allTalksStr = emsCommunicator.talksFullVersion(event);
+        String allTalksStr = sleepingpillCommunicator.talkShortVersion(event);
         JsonArray allTalks = JsonParser.parseToArray(allTalksStr);
         Set<String> res = allTalks.nodeStream().flatMap(jn -> {
             JsonObject obj = (JsonObject) jn;
@@ -97,11 +99,11 @@ public class SpeakerMailSender {
         mail = setupMailHeader(mail,"JavaZone 2016 Call for Speaker");
         mail.addTo(email);
         mail.setMsg(msg);
-        MailSenderService.get().sendMail(SmtpMailSender.create(mail));
+        MailSenderService.get().sendMail(MailSenderImplementation.create(mail));
     }
 
     private Set<String> readSpeakerList() {
-        JsonArray jsonArray = JsonParser.parseToArray(emsCommunicator.allEvents());
+        JsonArray jsonArray = JsonParser.parseToArray(sleepingpillCommunicator.allEvents());
         Map<String, String> eventmap = jsonArray.nodeStream()
                 .collect(Collectors.toMap(jn -> ((JsonObject) jn).requiredString("slug"), jn -> ((JsonObject) jn).requiredString("ref")));
         System.out.println(eventmap.keySet());

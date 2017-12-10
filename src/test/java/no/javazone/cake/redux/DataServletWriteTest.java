@@ -1,11 +1,14 @@
 package no.javazone.cake.redux;
 
+import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
+import org.jsonbuddy.JsonFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.util.Arrays;
 
@@ -18,24 +21,35 @@ public class DataServletWriteTest {
     private final HttpServletRequest req = mock(HttpServletRequest.class);
     private final HttpServletResponse resp = mock(HttpServletResponse.class);
     private final StringWriter jsonResult = new StringWriter();
-    private final EmsCommunicator emsCommunicator = mock(EmsCommunicator.class);
+    private final SleepingpillCommunicator sleepingpillCommunicator = mock(SleepingpillCommunicator.class);
+
 
     @Before
     public void setUp() throws Exception {
         when(req.getMethod()).thenReturn("POST");
         when(resp.getWriter()).thenReturn(new PrintWriter(jsonResult));
-        servlet.setEmsCommunicator(emsCommunicator);
+
+        HttpSession mockSession = mock(HttpSession.class);
+        when(req.getSession()).thenReturn(mockSession);
+        servlet.setSleepingpillCommunicator(sleepingpillCommunicator);
     }
 
     @Test
     public void shouldSaveTags() throws Exception {
         when(req.getPathInfo()).thenReturn("/editTalk");
-        String inputjson = "{\"ref\":\"abra\",\"lastModified\":\"Tue, 04 Feb 2014 23:55:06 GMT\",\"tags\":[\"test\"],\"state\":\"pending\"}";
+        String inputjson = JsonFactory.jsonObject()
+                .put("ref","abra")
+                .put("lastModified","Tue, 04 Feb 2014 23:55:06 GMT")
+                .put("state","pending")
+                .put("tags",JsonFactory.jsonArray().add("test"))
+                .put("keywords",JsonFactory.jsonArray().add("keyone"))
+                .toJson();
+        //String inputjson = "{\"ref\":\"abra\",\"lastModified\":\"Tue, 04 Feb 2014 23:55:06 GMT\",\"tags\":[\"test\"],\"state\":\"pending\"}";
         mockInputStream(inputjson);
 
         servlet.service(req,resp);
 
-        verify(emsCommunicator).update("abra", Arrays.asList("test"),"pending","Tue, 04 Feb 2014 23:55:06 GMT",UserAccessType.READ_ONLY);
+        verify(sleepingpillCommunicator).update("abra", Arrays.asList("test"),Arrays.asList("keyone"),"pending","Tue, 04 Feb 2014 23:55:06 GMT",UserAccessType.WRITE);
 
     }
 
@@ -54,16 +68,4 @@ public class DataServletWriteTest {
         });
     }
 
-    @Test
-    public void shouldPublishTalk() throws Exception {
-        when(req.getPathInfo()).thenReturn("/publishTalk");
-        String inputjson = "{\"ref\":\"abra\",\"lastModified\":\"Tue, 04 Feb 2014 23:55:06 GMT\"}";
-        mockInputStream(inputjson);
-
-        servlet.service(req,resp);
-
-        verify(emsCommunicator).publishTalk("abra","Tue, 04 Feb 2014 23:55:06 GMT",UserAccessType.READ_ONLY);
-
-
-    }
 }

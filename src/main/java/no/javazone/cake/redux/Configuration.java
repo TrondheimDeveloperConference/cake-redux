@@ -98,6 +98,10 @@ public class Configuration {
         return getProperty("autorizedUserFile");
     }
 
+    public static String fullUsers() {
+        return getProperty("fullUsers");
+    }
+
     public static boolean noAuthMode() {
         return "true".equals(getProperty("noAuthMode"));
     }
@@ -116,6 +120,10 @@ public class Configuration {
             return null;
         }
         return Integer.parseInt(serverPortStr);
+    }
+
+    public static String mailSenderImplementation() {
+        return readConf("mailSenderImplementation","smtp");
     }
 
     public static String smtpServer() {
@@ -174,6 +182,30 @@ public class Configuration {
 
     public static long emailSleepTime() {
         return Long.parseLong(readConf("emailSleepTime","5000"));
+    }
+
+    public static String sleepingPillBaseLocation() {
+        return readConf("sleepingPillBaseLocation","http://localhost:8082");
+    }
+
+    public static String sleepingpillUser() {
+        return readConf("sleepingpillUser",null);
+    }
+
+    public static String sleepingpillPassword() {
+        return readConf("sleepingpillPassword",null);
+    }
+
+    public static String feedbackDaoImpl() {
+        return readConf("feedbackDaoImpl","sleepingpill");
+    }
+
+    public static String videoAdminPassword() {
+        return readConf("videoAdminPassword","dummy:bingo");
+    }
+
+    public static String videoAdminConference() {
+        return readConf("videoAdminConference","30d5c2f1cb214fc8b0649a44fdf3b4bf");
     }
 
     public static String mailFrom() {

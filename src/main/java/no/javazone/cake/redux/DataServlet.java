@@ -1,11 +1,12 @@
 package no.javazone.cake.redux;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.javazone.cake.redux.comments.FeedbackService;
+import no.javazone.cake.redux.mail.MailSenderImplementation;
+import no.javazone.cake.redux.mail.MailSenderService;
+import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
+import no.javazone.cake.redux.sleepingpill.SlotUpdaterService;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.SimpleEmail;
 import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.JsonFactory;
 import org.jsonbuddy.JsonNull;
@@ -21,10 +22,9 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class DataServlet extends HttpServlet {
-    private EmsCommunicator emsCommunicator;
+    private SleepingpillCommunicator sleepingpillCommunicator;
     private AcceptorSetter acceptorSetter;
     private UserFeedbackCommunicator userFeedbackCommunicator;
 
@@ -32,8 +32,6 @@ public class DataServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         if ("/editTalk".equals(pathInfo)) {
             updateTalk(req, resp);
-        } else if ("/publishTalk".equals(pathInfo)) {
-            publishTalk(req, resp);
         } else if ("/acceptTalks".equals(pathInfo)) {
             acceptTalks(req,resp);
         } else if ("/massUpdate".equals(pathInfo)) {
@@ -50,8 +48,114 @@ public class DataServlet extends HttpServlet {
         } else if ("/giveRating".equals(pathInfo)) {
             giveRating(req, resp);
             resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/addPubComment".equals(pathInfo)) {
+            addPublicComment(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/publishChanges".equals(pathInfo)) {
+            publishChanges(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/updateroomslot".equals(pathInfo)) {
+            updateRoomSlot(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/readSlotForUpdate".equals(pathInfo)) {
+            readSlotForUpdate(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/sendForRoomSlotUpdate".equals(pathInfo)) {
+            roomSlotUpdate(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
         }
 
+    }
+
+    private void roomSlotUpdate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        SlotUpdaterService.get().updateRoomSlot(update,computeAccessType(req));
+        JsonFactory.jsonObject().toJson(resp.getWriter());
+    }
+
+    private void readSlotForUpdate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        JsonObject result = SlotUpdaterService.get().readDataOnTalks(update,computeAccessType(req));
+        result.toJson(resp.getWriter());
+    }
+
+    private void updateRoomSlot(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        String talkref = update.requiredString("talkref");
+        UserAccessType userAccessType = computeAccessType(req);
+        Optional<String> startTime = update.stringValue("starttime");
+        if (startTime.isPresent()) {
+            sleepingpillCommunicator.updateSlotTime(talkref,startTime.get(), userAccessType);
+        }
+        Optional<String> room = update.stringValue("room");
+        if (room.isPresent()) {
+            sleepingpillCommunicator.updateRoom(talkref,room.get(),userAccessType);
+        }
+
+        JsonFactory.jsonObject().toJson(resp.getWriter());
+    }
+
+    private void publishChanges(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        sleepingpillCommunicator.pubishChanges(update.requiredString("talkref"),computeAccessType(req));
+        JsonFactory.jsonObject().toJson(resp.getWriter());
+    }
+
+    private void addPublicComment(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        String ref = update.requiredString("talkref");
+        String comment = update.requiredString("comment");
+        String lastModified = update.requiredString("lastModified");
+        JsonObject jsonObject = sleepingpillCommunicator.addPublicComment(ref, comment, lastModified);
+
+        SimpleEmail simpleEmail = generateCommentEmail(jsonObject);
+        MailSenderService.get().sendMail(MailSenderImplementation.create(simpleEmail));
+
+
+        JsonArray updatedComments = jsonObject.requiredArray("comments");
+        updatedComments.toJson(resp.getWriter());
+
+
+
+
+    }
+
+    private SimpleEmail generateCommentEmail(JsonObject jsonObject) {
+        SimpleEmail simpleEmail = new SimpleEmail();
+        try {
+            jsonObject.requiredArray("speakers").objectStream()
+                    .map(ob -> ob.requiredString("email"))
+                    .forEach(to -> {
+                        try {
+                            simpleEmail.addTo(to);
+                        } catch (EmailException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            AcceptorSetter.setupMailHeader(simpleEmail,"Regarding your JavaZone submission");
+            simpleEmail.setMsg("Hello,\n\n" +
+                    "The program committee has added a comment to your submission that requires your attention. " +
+                    "Please head to https://submit.javazone.no to see the comment.\n" +
+                    "\nRegards\nThe JavaZone program comittee");
+        } catch (EmailException e) {
+            throw new RuntimeException(e);
+        }
+        return simpleEmail;
     }
 
     private void giveRating(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -66,36 +170,25 @@ public class DataServlet extends HttpServlet {
 
     private void massPublish(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (InputStream inputStream = req.getInputStream()) {
-            String inputStr = CommunicatorHelper.toString(inputStream);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode update = objectMapper.readTree(inputStr);
-            String ref = update.get("ref").asText();
+            JsonObject update = JsonParser.parseToObject(inputStream);
+            String ref = update.requiredString("ref");
             approveTalk(ref,computeAccessType(req));
-            publishTheTalk(ref,computeAccessType(req));
         }
-        ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+        JsonObject objectNode = JsonFactory.jsonObject();
         objectNode.put("status","ok");
         resp.setContentType("text/json");
-        resp.getWriter().append(objectNode.toString());
+        objectNode.toJson(resp.getWriter());
     }
 
     private void approveTalk(String ref,UserAccessType userAccessType) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonTalk = objectMapper.readTree(emsCommunicator.fetchOneTalk(ref));
-        List<String> tags = AcceptorSetter.toCollection((ArrayNode) jsonTalk.get("tags"));
-        String lastModified = jsonTalk.get("lastModified").asText();
-        emsCommunicator.update(ref,tags,"approved",lastModified,userAccessType);
+        sleepingpillCommunicator.approveTalk(ref,userAccessType);
     }
 
-    private void publishTheTalk(String ref,UserAccessType userAccessType) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonTalk = objectMapper.readTree(emsCommunicator.fetchOneTalk(ref));
-        String lastModified = jsonTalk.get("lastModified").asText();
-        emsCommunicator.publishTalk(ref,lastModified,userAccessType);
-    }
 
 
     private void assignRoom(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        throw new NotImplementedException();
+        /*
         try (InputStream inputStream = req.getInputStream()) {
             String inputStr = CommunicatorHelper.toString(inputStream);
             ObjectMapper objectMapper = new ObjectMapper();
@@ -105,13 +198,15 @@ public class DataServlet extends HttpServlet {
 
             String lastModified = update.get("lastModified").asText();
 
-            String newTalk = emsCommunicator.assignRoom(ref,roomRef,lastModified,computeAccessType(req));
-            resp.getWriter().append(newTalk);
-        }
+            //String newTalk = xemsCommunicator.assignRoom(ref,roomRef,lastModified,computeAccessType(req));
+            //resp.getWriter().append(newTalk);
+        }*/
 
     }
 
     private void assignSlot(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        throw new NotImplementedException();
+        /*
         try (InputStream inputStream = req.getInputStream()) {
             String inputStr = CommunicatorHelper.toString(inputStream);
             ObjectMapper objectMapper = new ObjectMapper();
@@ -124,39 +219,29 @@ public class DataServlet extends HttpServlet {
 
             String newTalk = emsCommunicator.assignSlot(ref, slotRef, lastModified,computeAccessType(req));
             resp.getWriter().append(newTalk);
-        }
+        }*/
 
     }
 
 
-    private void publishTalk(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        try (InputStream inputStream = req.getInputStream()) {
-            org.jsonbuddy.JsonNode update = JsonParser.parse(inputStream);
 
-
-            String ref = update.requiredString("ref");
-
-            String lastModified = update.requiredString("lastModified");
-
-            String newTalk = emsCommunicator.publishTalk(ref, lastModified,computeAccessType(req));
-            resp.getWriter().append(newTalk);
-        }
-
-    }
 
     private static UserAccessType computeAccessType(HttpServletRequest request) {
-        String useremail = (String) request.getSession().getAttribute("useremail");
-        String autorizedUsers = Configuration.getAutorizedUsers();
-        return autorizedUsers.contains(useremail) ? UserAccessType.FULL : UserAccessType.READ_ONLY;
+        String fullusers = Optional.ofNullable(Configuration.fullUsers()).orElse("");
+        if (Optional.ofNullable(request.getSession().getAttribute("username"))
+            .filter(un -> fullusers.contains((String) un))
+            .isPresent()) {
+            return UserAccessType.FULL;
+        }
+        return UserAccessType.WRITE;
     }
 
     private void acceptTalks(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (InputStream inputStream = req.getInputStream()) {
+            JsonObject obj = JsonParser.parseToObject(inputStream);
+            JsonArray talks = obj.requiredArray("talks");
             String inputStr = CommunicatorHelper.toString(inputStream);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonObject = objectMapper.readTree(inputStr);
 
-            ArrayNode talks = (ArrayNode) jsonObject.get("talks");
             String statusJson = acceptorSetter.accept(talks,computeAccessType(req));
             resp.getWriter().append(statusJson);
         }
@@ -164,28 +249,31 @@ public class DataServlet extends HttpServlet {
 
     private void massUpdate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (InputStream inputStream = req.getInputStream()) {
-            String inputStr = CommunicatorHelper.toString(inputStream);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonObject = objectMapper.readTree(inputStr);
-            String statusJson = acceptorSetter.massUpdate((ObjectNode) jsonObject,computeAccessType(req));
+            JsonObject input = JsonParser.parseToObject(inputStream);
+            String statusJson = acceptorSetter.massUpdate(input,computeAccessType(req));
             resp.getWriter().append(statusJson);
 
         }
     }
     private void updateTalk(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
         try (InputStream inputStream = req.getInputStream()) {
-            JsonObject update = (JsonObject) JsonParser.parse(inputStream);
-
-            String ref = update.requiredString("ref");
-            JsonArray tags = (JsonArray) update.value("tags").orElse(JsonFactory.jsonArray());
-            String state = update.requiredString("state");
-            String lastModified = update.requiredString("lastModified");
-
-            List<String> taglist = tags.nodeStream().map(org.jsonbuddy.JsonNode::stringValue).collect(Collectors.toList());
-
-            String newTalk = emsCommunicator.update(ref, taglist, state, lastModified,computeAccessType(req));
-            resp.getWriter().append(newTalk);
+            update = JsonParser.parseToObject(inputStream);
         }
+
+        String ref = update.requiredString("ref");
+        JsonArray tags = (JsonArray) update.value("tags").orElse(JsonFactory.jsonArray());
+        JsonArray keywords = (JsonArray) update.value("keywords").orElse(JsonFactory.jsonArray());
+
+        String state = update.requiredString("state");
+        String lastModified = update.stringValue("lastModified").orElse("xx");
+
+        List<String> taglist = tags.strings();
+        List<String> keywordlist = keywords.strings();
+
+        //String newTalk = emsCommunicator.update(ref, taglist, state, lastModified,computeAccessType(req));
+        String newTalk = sleepingpillCommunicator.update(ref, taglist, keywordlist,state, lastModified,computeAccessType(req));
+        resp.getWriter().append(newTalk);
 
     }
 
@@ -195,24 +283,32 @@ public class DataServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         if ("/talks".equals(pathInfo)) {
             String encEvent = request.getParameter("eventId");
-            writer.append(emsCommunicator.talkShortVersion(encEvent));
+            String json = sleepingpillCommunicator.talkShortVersion(encEvent);
+
+            writer.append(json);
+
         } else if ("/atalk".equals(pathInfo)) {
             String encTalk = request.getParameter("talkId");
-            JsonObject oneTalkAsJson = emsCommunicator.oneTalkAsJson(encTalk);
+            JsonObject oneTalkAsJson = sleepingpillCommunicator.oneTalkAsJson(encTalk);
             appendFeedbacks(oneTalkAsJson,encTalk);
-            appendUserFeedback(oneTalkAsJson, userFeedbackCommunicator.feedback(encTalk));
-            oneTalkAsJson.toJson(writer);
+            // TODO Fix feedbacks
+            appendUserFeedback(oneTalkAsJson, userFeedbackCommunicator.feedback(oneTalkAsJson.stringValue("emslocation")));
+            writer.append(SleepingpillCommunicator.jsonHackFix(oneTalkAsJson.toJson()));
         } else if ("/events".equals(pathInfo)) {
-            writer.append(emsCommunicator.allEvents());
+            writer.append(sleepingpillCommunicator.allEvents());
         } else if ("/roomsSlots".equals(pathInfo)) {
             String encEvent = request.getParameter("eventId");
-            writer.append(emsCommunicator.allRoomsAndSlots(encEvent));
+            JsonFactory.jsonObject()
+                    .put("rooms",JsonFactory.jsonArray())
+                    .put("slots",JsonFactory.jsonArray())
+                    .toJson(writer);
+            //writer.append(emsCommunicator.allRoomsAndSlots(encEvent));
         }
     }
 
-    private void appendUserFeedback(JsonObject oneTalkAsJson, String feedback) {
-        if (feedback != null) {
-            JsonObject feedbackAsJson = JsonParser.parseToObject(feedback);
+    private void appendUserFeedback(JsonObject oneTalkAsJson, Optional<String> feedback) {
+        if (feedback.isPresent()) {
+            JsonObject feedbackAsJson = JsonParser.parseToObject(feedback.get());
             oneTalkAsJson.put("userFeedback", feedbackAsJson);
         } else {
             oneTalkAsJson.put("userFeedback", new JsonNull());
@@ -227,24 +323,15 @@ public class DataServlet extends HttpServlet {
         Optional<String> contact = FeedbackService.get().contactForTalk(encTalk);
         oneTalkAsJson.put("contactPhone",contact.orElse("Unknown"));
     }
-
-    private String config() {
-        ObjectNode conf = JsonNodeFactory.instance.objectNode();
-        conf.put("submititloc",Configuration.submititLocation());
-        return conf.toString();
-    }
-
+    
 
     @Override
     public void init() throws ServletException {
-        emsCommunicator = new EmsCommunicator();
+        sleepingpillCommunicator = new SleepingpillCommunicator();
         userFeedbackCommunicator = new UserFeedbackCommunicator();
-        acceptorSetter = new AcceptorSetter(emsCommunicator, userFeedbackCommunicator);
+        acceptorSetter = new AcceptorSetter(sleepingpillCommunicator);
     }
 
-    public void setEmsCommunicator(EmsCommunicator emsCommunicator) {
-        this.emsCommunicator = emsCommunicator;
-    }
 
     public void setUserFeedbackCommunicator(UserFeedbackCommunicator userFeedbackCommunicator) {
         this.userFeedbackCommunicator = userFeedbackCommunicator;
@@ -257,5 +344,10 @@ public class DataServlet extends HttpServlet {
         } catch (NoUserAceessException ex) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN,"User do not have write access");
         }
+    }
+
+    public DataServlet setSleepingpillCommunicator(SleepingpillCommunicator sleepingpillCommunicator) {
+        this.sleepingpillCommunicator = sleepingpillCommunicator;
+        return this;
     }
 }

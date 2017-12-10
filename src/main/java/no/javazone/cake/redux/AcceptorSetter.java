@@ -1,16 +1,14 @@
 package no.javazone.cake.redux;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.javazone.cake.redux.mail.MailSenderImplementation;
 import no.javazone.cake.redux.mail.MailSenderService;
 import no.javazone.cake.redux.mail.SmtpMailSender;
+import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.jsonbuddy.JsonArray;
+import org.jsonbuddy.JsonFactory;
 import org.jsonbuddy.JsonObject;
-import org.jsonbuddy.parse.JsonParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,64 +19,52 @@ import java.util.List;
 import java.util.Optional;
 
 public class AcceptorSetter {
-    private EmsCommunicator emsCommunicator;
-    private UserFeedbackCommunicator userFeedbackCommunicator;
+    //private EmsCommunicator emsCommunicator;
+    private SleepingpillCommunicator sleepingpillCommunicator;
 
-
-    public AcceptorSetter(EmsCommunicator emsCommunicator, UserFeedbackCommunicator userFeedbackCommunicator) {
-        this.emsCommunicator = emsCommunicator;
-        this.userFeedbackCommunicator = userFeedbackCommunicator;
+    public AcceptorSetter(SleepingpillCommunicator sleepingpillCommunicator) {
+        this.sleepingpillCommunicator = sleepingpillCommunicator;
+        //this.emsCommunicator = emsCommunicator;
     }
 
-    public String accept(ArrayNode talks,UserAccessType userAccessType) {
+    public String accept(JsonArray talks,UserAccessType userAccessType) {
         String template = loadTemplate();
         String tagToAdd = "accepted";
         String tagExistsErrormessage = "Talk is already accepted";
-        String subjectTemplate = "Trondheim Developer Conference 2017 #talkType# accepted";
+        String subjectTemplate = "Javazone 2017 #talkType# accepted";
 
-        return doUpdates(talks, template, subjectTemplate, tagToAdd, tagExistsErrormessage,userAccessType);
+        return doUpdates(talks, template, subjectTemplate, tagToAdd, tagExistsErrormessage,userAccessType,false);
     }
 
-    public String massUpdate(ObjectNode jsonObject,UserAccessType userAccessType) {
-        ArrayNode talks = (ArrayNode) jsonObject.get("talks");
+    public String massUpdate(JsonObject jsonObject,UserAccessType userAccessType) {
+        JsonArray talks = jsonObject.requiredArray("talks");
 
         String template = null;
         String subjectTemplate = null;
-        if ("true".equals(jsonObject.get("doSendMail").asText())) {
-            template = jsonObject.get("message").asText();
-            subjectTemplate = jsonObject.get("subject").asText();
+        if ("true".equals(jsonObject.requiredString("doSendMail"))) {
+            template = jsonObject.requiredString("message");
+            subjectTemplate = jsonObject.requiredString("subject");
         };
 
         String tagToAdd = null;
-        if ("true".equals(jsonObject.get("doTag").asText())) {
-            tagToAdd = jsonObject.get("newtag").asText();
+        if ("true".equals(jsonObject.requiredString("doTag"))) {
+            tagToAdd = jsonObject.requiredString("newtag");
         }
         String tagExistsErrormessage = "Tag already exsists";
 
-        return doUpdates(talks, template, subjectTemplate, tagToAdd, tagExistsErrormessage,userAccessType);
+        boolean publishUpdates = "true".equals(jsonObject.stringValue("publishUpdates").orElse("false"));
+
+        return doUpdates(talks, template, subjectTemplate, tagToAdd, tagExistsErrormessage,userAccessType,publishUpdates);
     }
 
-    private String doUpdates(ArrayNode talks, String template, String subjectTemplate, String tagToAdd, String tagExistsErrormessage,UserAccessType userAccessType) {
-        List<JsonNode> statusAllTalks = new ArrayList<>();
+    private String doUpdates(JsonArray talks, String template, String subjectTemplate, String tagToAdd, String tagExistsErrormessage,UserAccessType userAccessType,boolean publishUpdates) {
+        JsonArray statusAllTalks = JsonFactory.jsonArray();
         for (int i=0;i<talks.size();i++) {
-            ObjectNode accept = JsonNodeFactory.instance.objectNode();
+            JsonObject accept = JsonFactory.jsonObject();
             statusAllTalks.add(accept);
             try {
-                String encodedTalkRef = talks.get(i).get("ref").asText();
-                JsonObject jsonTalk = emsCommunicator.oneTalkAsJson(encodedTalkRef);
-
-                String feedback = userFeedbackCommunicator.feedback(encodedTalkRef);
-                if (feedback != null) {
-                    JsonObject jsonFeedback = JsonParser.parseToObject(feedback);
-                    JsonObject paperfeedback = jsonFeedback.requiredObject("session").requiredObject("paper");
-                    long green = paperfeedback.requiredLong("green");
-                    long red = paperfeedback.requiredLong("red");
-                    System.out.println("Green " + green + " red " + red);
-                    jsonTalk.put("papergreen", green);
-                    jsonTalk.put("paperred", red);
-                } else {
-                    System.out.println("No feedback");
-                }
+                String encodedTalkRef = talks.get(i,JsonObject.class).requiredString("ref");
+                JsonObject jsonTalk = sleepingpillCommunicator.oneTalkStripped(encodedTalkRef);
 
                 accept.put("title",jsonTalk.requiredString("title"));
 
@@ -97,7 +83,10 @@ public class AcceptorSetter {
                 if (tagToAdd != null) {
                     tags.add(tagToAdd);
                     String lastModified = jsonTalk.requiredString("lastModified");
-                    emsCommunicator.updateTags(encodedTalkRef, tags, lastModified,userAccessType);
+                    sleepingpillCommunicator.updateTags(encodedTalkRef, tags, userAccessType,lastModified);
+                }
+                if (publishUpdates) {
+                    sleepingpillCommunicator.pubishChanges(encodedTalkRef,userAccessType);
                 }
                 accept.put("status","ok");
                 accept.put("message","ok");
@@ -107,9 +96,7 @@ public class AcceptorSetter {
                     accept.put("message","Error: " + e.getMessage());
             }
         }
-        ArrayNode res = JsonNodeFactory.instance.arrayNode();
-        res.addAll(statusAllTalks);
-        return res.toString();
+        return statusAllTalks.toJson();
     }
 
     private void generateAndSendMail(
@@ -130,32 +117,26 @@ public class AcceptorSetter {
 
         String message = generateMessage(template,title, talkType, speakerName, submitLink, confirmLocation,jsonTalk);
         mail.setMsg(message);
-        MailSenderService.get().sendMail(SmtpMailSender.create(mail));
-    }
-
-    public static List<String> toCollection(ArrayNode tags) {
-        ArrayList<String> result = new ArrayList<>();
-        if (tags == null) {
-            return result;
-        }
-        for (int i=0;i<tags.size();i++) {
-            result.add(tags.get(i).asText());
-        }
-        return result;
+        MailSenderService.get().sendMail(MailSenderImplementation.create(mail));
     }
 
 
 
-    private SimpleEmail setupMailHeader(SimpleEmail mail,String subject) throws EmailException {
+
+    public static SimpleEmail setupMailHeader(SimpleEmail mail,String subject) throws EmailException {
         mail.setHostName(Configuration.smtpServer());
-        mail.setFrom(Configuration.mailFrom(), Configuration.mailFromName());
-        mail.addBcc(Configuration.bcc());
+        mail.setFrom("program@java.no", "Javazone program commitee");
+        mail.addBcc("program-auto@java.no");
         mail.setSubject(subject);
 
+
         if (Configuration.useMailSSL()) {
-            mail.setStartTLSEnabled(true);
+            mail.setSSLOnConnect(true);
+            mail.setSslSmtpPort("" + Configuration.smtpPort());
+        } else {
+            mail.setSmtpPort(Configuration.smtpPort());
+
         }
-        mail.setSmtpPort(Configuration.smtpPort());
         String mailUser = Configuration.mailUser();
         if (mailUser != null) {
             mail.setAuthentication(mailUser, Configuration.mailPassword());
@@ -196,22 +177,6 @@ public class AcceptorSetter {
         message = replaceAll(message,"#talkType#", talkType);
         message = replaceAll(message,"#submititLink#", submitLink);
         message = replaceAll(message,"#confirmLink#", confirmLocation);
-
-        Optional<Long> paperred = jsonTalk.longValue("paperred");
-        Optional<Long> papergreen = jsonTalk.longValue("papergreen");
-        System.out.println(paperred + " red");
-        System.out.println(papergreen + " green");
-        if(papergreen.isPresent() && paperred.isPresent()) {
-            long mehCount = paperred.get();
-            long awesomeCount = papergreen.get();
-            double total = mehCount + awesomeCount;
-            long mehRatio = (long)((mehCount / total) * 100);
-            long awesomeRatio = 100 - mehRatio;
-            System.out.println(mehRatio + " red");
-            System.out.println(awesomeRatio + " green");
-            message = replaceAll(message,"#paperred#", String.valueOf(mehRatio));
-            message = replaceAll(message,"#papergreen#", String.valueOf(awesomeRatio));
-        }
 
         for (int pos=message.indexOf("#");pos!=-1;pos=message.indexOf("#",pos+1)) {
             if (pos == message.length()-1) {
@@ -260,7 +225,7 @@ public class AcceptorSetter {
         if (!startVal.isPresent()) {
             return Optional.of("No slot allocated");
         }
-        LocalDateTime parse = LocalDateTime.parse(startVal.get(), DateTimeFormatter.ofPattern("yyMMdd HH:mm"));
+        LocalDateTime parse = LocalDateTime.parse(startVal.get());
         String val = parse.format(DateTimeFormatter.ofPattern("MMMM d 'at' HH:mm"));
         return Optional.of(val);
     }

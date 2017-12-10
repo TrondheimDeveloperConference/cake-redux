@@ -22,21 +22,7 @@ angular.module('cakeReduxModule')
                 }
                 var talkSpeakers = $scope.aTalk.speakers;
 
-                talkManagerService.talkList($scope.aTalk.eventSlug).then(function(data) {
-                    _.each(talkSpeakers, function (tspeak) {
-                        tspeak.otherTalks = _.filter(data.data, function (talk) {
-                            if (talk.ref == $scope.aTalk.ref) {
-                                return false;
-                            }
-                            var found = false;
-                            if (_.findWhere(talk.speakers, {name: tspeak.name})) {
-                                found = true;
-                            }
-                            return found;
-                        });
-
-                    });
-                });
+                //talkManagerService.talkList($scope.aTalk.eventSlug);
                 if ($scope.aTalk) {
                     document.title = $scope.aTalk.title;
                     roomSlotFactory.roomsSlotsForEvent($scope.aTalk.eventId).then(function(rs) {
@@ -70,12 +56,17 @@ angular.module('cakeReduxModule')
             $scope.reloadTalk = function() {
                 $http({method: "GET", url: "data/atalk?talkId=" + talkRef})
                     .success(updateFromServer);
-            }
+            };
 
             $scope.newTagTyped = function() {
                 var n = $scope.newTag;
                 $scope.aTalk.tags.push(n);
-            }
+            };
+
+            $scope.newKeywordTyped = function() {
+                var n = $scope.newKeyword;
+                $scope.aTalk.keywords.push(n);
+            };
 
 
 
@@ -84,7 +75,16 @@ angular.module('cakeReduxModule')
                 if (index > -1) {
                     $scope.aTalk.tags.splice(index,1);
                 }
-            }
+            };
+
+            $scope.removeKeyword = function(keyword) {
+                var index = $scope.aTalk.keywords.indexOf(keyword);
+                if (index > -1) {
+                    $scope.aTalk.keywords.splice(index,1);
+                }
+            };
+
+
 
             $scope.saveTalk = function() {
                 $scope.showError = false;
@@ -92,10 +92,11 @@ angular.module('cakeReduxModule')
                 savebtn.button("loading");
                 var t = $scope.aTalk;
                 var postData = {
-                  ref: t.ref,
-                  lastModified: t.lastModified,
-                  tags : t.tags,
-                  state: t.state
+                    ref: t.ref,
+                    lastModified: t.lastModified,
+                    tags : t.tags,
+                    state: t.state,
+                    keywords: t.keywords
                 };
                 $http({
                     method: "POST",
@@ -114,33 +115,6 @@ angular.module('cakeReduxModule')
                 });
             };
 
-            $scope.publishTalk = function() {
-                $scope.showError = false;
-              ;
-                var t = $scope.aTalk;
-                var postData = {
-                    ref: t.ref,
-                    lastModified: t.lastModified
-                };
-                $http({
-                    method: "POST",
-                    url: "data/publishTalk",
-                    data: postData
-                }).success(function(data) {
-
-                    if (data.error) {
-                        $scope.errormessage = data.error;
-                        $scope.showError = true;
-                        return;
-                    }
-                    $scope.aTalk.lastModified = data.lastModified;
-                    $scope.aTalk.published = data.published;
-                }).error(function(data, status, headers, config) {
-                    $scope.errormessage = data.error;
-                    $scope.showError = true;
-                });
-            };
-
             $scope.joinArr = function(arr) {
                 if (!arr || arr.length == 0) {
                     return null;
@@ -151,55 +125,6 @@ angular.module('cakeReduxModule')
                 return res;
             };
 
-            $scope.updateRoom = function() {
-                $scope.showError = false;
-                var postData = {
-                    talkRef: $scope.aTalk.ref,
-                    roomRef: $scope.selectedRoom,
-                    lastModified: $scope.aTalk.lastModified
-                }
-                $http({
-                    method: "POST",
-                    url: "data/assignRoom",
-                    data: postData
-                }).success(function(data) {
-                    if (data.error) {
-                        $scope.errormessage = data.error;
-                        $scope.showError = true;
-                        return;
-                    }
-                    $scope.aTalk.lastModified = data.lastModified;
-                    $scope.aTalk.room = data.room;
-                }).error(function(data, status, headers, config) {
-                    $scope.errormessage = data.error;
-                    $scope.showError = true;
-                });
-            };
-
-            $scope.updateSlot = function() {
-                $scope.showError = false;
-                var postData = {
-                    talkRef: $scope.aTalk.ref,
-                    slotRef: $scope.selectedSlot,
-                    lastModified: $scope.aTalk.lastModified
-                }
-                $http({
-                    method: "POST",
-                    url: "data/assignSlot",
-                    data: postData
-                }).success(function(data) {
-                    if (data.error) {
-                        $scope.errormessage = data.error;
-                        $scope.showError = true;
-                        return;
-                    }
-                    $scope.aTalk.lastModified = data.lastModified;
-                    $scope.aTalk.slot = data.slot;
-                }).error(function(data, status, headers, config) {
-                    $scope.errormessage = data.error;
-                    $scope.showError = true;
-                });
-            };
 
             $scope.addComment = function () {
                 $http({
@@ -207,7 +132,8 @@ angular.module('cakeReduxModule')
                     url: "data/addComment",
                     data: {
                         talkref: talkRef,
-                        comment: $scope.newCommentText
+                        comment: $scope.newCommentText,
+                        lastModified: $scope.aTalk.lastModified
                     }
                 }).success(function (data) {
                     $scope.comments = data;
@@ -221,12 +147,72 @@ angular.module('cakeReduxModule')
                     url: "data/giveRating",
                     data: {
                         talkref: talkRef,
-                        rating: givenRating
+                        rating: givenRating,
+                        lastModified: $scope.aTalk.lastModified
                     }
                 }).success(function (data) {
                     $scope.ratings = data;
                 });
+            };
+
+            $scope.addPubComment = function () {
+                $http({
+                    method: "POST",
+                    url: "data/addPubComment",
+                    data: {
+                        talkref: talkRef,
+                        comment: $scope.newPubCommentText,
+                        lastModified: $scope.aTalk.lastModified
+                    }
+                }).success(function (data) {
+                    $scope.aTalk.pubcomments = data;
+                    $scope.newPubCommentText = "";
+                });
+
+            };
+
+            $scope.publishChanges = function () {
+                $http({
+                    method: "POST",
+                    url: "data/publishChanges",
+                    data: {
+                        talkref: talkRef
+                    }
+                }).success(function (data) {
+                    window.location.reload();
+                });
+            };
+
+            $scope.newStarttime = function () {
+                $http({
+                    method: "POST",
+                    url: "data/updateroomslot",
+                    data: {
+                        talkref: talkRef,
+                        starttime: $scope.newstarttime
+                    }
+                }).success(function (data) {
+                    window.location.reload();
+                });
+            };
+
+            $scope.newRoom = function () {
+                $http({
+                    method: "POST",
+                    url: "data/updateroomslot",
+                    data: {
+                        talkref: talkRef,
+                        room: $scope.newroom
+                    }
+                }).success(function (data) {
+                    window.location.reload();
+                });
+            };
+
+            $scope.selectRoom = function (selroom) {
+                $scope.newroom = selroom;
             }
+
 
         }]);
 
