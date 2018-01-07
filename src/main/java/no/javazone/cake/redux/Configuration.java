@@ -187,6 +187,9 @@ public class Configuration {
     public static String sleepingPillBaseLocation() {
         return readConf("sleepingPillBaseLocation","http://localhost:8082");
     }
+    public static String devnullLocation() {
+        return readConf("devnullLocation","http://localhost:8084/devnull");
+    }
 
     public static String sleepingpillUser() {
         return readConf("sleepingpillUser",null);

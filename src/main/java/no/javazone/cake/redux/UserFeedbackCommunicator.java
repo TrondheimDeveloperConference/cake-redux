@@ -14,8 +14,7 @@ public class UserFeedbackCommunicator {
 
         String urlToDevNull = convertFromEmsToDevNullUrl(emslocation.get());
         URLConnection urlConnection = CommunicatorHelper.openConnection(urlToDevNull, false);
-        try {
-            InputStream is = CommunicatorHelper.openStream(urlConnection);
+        try (InputStream is = CommunicatorHelper.openStream(urlConnection)){
             return Optional.of(CommunicatorHelper.toString(is));
         } catch (IOException ignore) {
             return Optional.empty();
@@ -23,7 +22,8 @@ public class UserFeedbackCommunicator {
     }
 
     private String convertFromEmsToDevNullUrl(String emsUrl) {
-        return emsUrl.replaceAll("\\/ems\\/", "/devnull/") + "/feedbacks";
+        String talk = emsUrl.substring(emsUrl.indexOf("/events"));
+        return Configuration.devnullLocation() + talk + "/feedbacks";
     }
 
 }
