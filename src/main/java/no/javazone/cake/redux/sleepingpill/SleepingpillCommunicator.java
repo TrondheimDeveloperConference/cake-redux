@@ -373,12 +373,14 @@ public class SleepingpillCommunicator {
         JsonObject payload = JsonFactory.jsonObject();
         payload.put("lastUpdated",lastModified);
 
-        JsonObject commentobj = JsonFactory.jsonObject().put("email", "program@java.no").put("from", "JavaZone program commitee").put("comment", comment);
+        JsonObject commentobj = JsonFactory.jsonObject()
+                .put("email", Configuration.mailFrom())
+                .put("from", Configuration.mailFromName())
+                .put("comment", comment);
 
         payload.put("comments",JsonFactory.jsonArray().add(commentobj));
 
-        JsonObject jsonObject = sendTalkUpdate(ref, payload);
-        return jsonObject;
+        return sendTalkUpdate(ref, payload);
     }
 
     public void pubishChanges(String talkref, UserAccessType userAccessType) {

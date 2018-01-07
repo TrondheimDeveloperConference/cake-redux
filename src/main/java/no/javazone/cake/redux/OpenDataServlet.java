@@ -78,8 +78,6 @@ public class OpenDataServlet extends HttpServlet {
         String dinner = jsonObject.requiredString("dinner");
         String contactPhone = removeIllegalChars(jsonObject.stringValue("contactPhone").filter(te -> !te.trim().isEmpty()).orElse("Unknown"));
 
-
-
         Feedback contact = Contact.builder()
                 .setContactPhone(contactPhone)
                 .setTalkid(encodedTalkUrl)

@@ -125,8 +125,8 @@ public class AcceptorSetter {
 
     public static SimpleEmail setupMailHeader(SimpleEmail mail,String subject) throws EmailException {
         mail.setHostName(Configuration.smtpServer());
-        mail.setFrom("program@java.no", "Javazone program commitee");
-        mail.addBcc("program-auto@java.no");
+        mail.setFrom(Configuration.mailFrom(), Configuration.mailFromName());
+        mail.addBcc(Configuration.mailFrom());
         mail.setSubject(subject);
 
 
