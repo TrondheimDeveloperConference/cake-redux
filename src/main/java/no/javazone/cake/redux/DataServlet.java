@@ -164,7 +164,8 @@ public class DataServlet extends HttpServlet {
     }
 
     private void addComment(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        JsonArray comments = FeedbackService.get().addComment(JsonParser.parseToObject(req.getInputStream()), req.getSession().getAttribute("username").toString());
+        JsonArray comments = FeedbackService.get()
+                .addComment(JsonParser.parseToObject(req.getInputStream()), req.getSession().getAttribute("username").toString());
         comments.toJson(resp.getWriter());
     }
 

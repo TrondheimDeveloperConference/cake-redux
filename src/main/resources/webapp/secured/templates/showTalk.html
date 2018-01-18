@@ -120,6 +120,14 @@
     <h2>Internal comments</h2>
     <p ng-repeat="acomment in comments"><b>{{acomment.author}}:</b> {{acomment.info}}</p>
 
+    <h2>Add comment</h2>
+    <div class="well">
+        <p>
+            <textarea ng-model="newCommentText" type="text" placeholder="Comment"/>
+            <button class="btn btn-primary" ng-click="addComment()">Add</button>
+        </p>
+    </div>
+
     <h2>Internal ratings</h2>
     <ul>
         <li ng-repeat="arating in ratings"><b>{{arating.author}}:</b> {{arating.info}}</li>
@@ -223,13 +231,6 @@
     <div class="alert alert-danger" ng-show="showError"><strong>Error saving: {{errormessage}}</strong></div>
     <p><button id="saveButton" class="btn btn-danger btn-lg cake-margin" ng-click="saveTalk()">Save</button></p>
 
-    <h2>Add comment</h2>
-    <div class="well">
-        <p>
-            <textarea ng-model="newCommentText" type="text" placeholder="Comment"/>
-            <button class="btn btn-primary" ng-click="addComment()">Add</button>
-        </p>
-    </div>
     <h2>My rating</h2>
     <div class="btn-group" data-toggle="buttons">
         <label class="btn btn-info btn-lg" ng-click="ratingClicked('--')">
