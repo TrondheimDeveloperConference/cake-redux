@@ -147,11 +147,11 @@ public class DataServlet extends HttpServlet {
                             throw new RuntimeException(e);
                         }
                     });
-            AcceptorSetter.setupMailHeader(simpleEmail,"Regarding your JavaZone submission");
+            AcceptorSetter.setupMailHeader(simpleEmail,"Regarding your Trondheim Developer Conference submission");
             simpleEmail.setMsg("Hello,\n\n" +
                     "The program committee has added a comment to your submission that requires your attention. " +
-                    "Please head to https://submit.javazone.no to see the comment.\n" +
-                    "\nRegards\nThe JavaZone program comittee");
+                    "Please head to https://submitit.trondheimdc.no to see the comment.\n" +
+                    "\nRegards\nThe Trondheim Developer Conference program comittee");
         } catch (EmailException e) {
             throw new RuntimeException(e);
         }
