@@ -30,6 +30,9 @@
         }).when("/report", {
             templateUrl: "templates/talkReport.html",
             controller: "TalkReportCtrl"
+        }).when("/drafts/:eventSlug", {
+            templateUrl: "templates/draftReport.html",
+            controller: "DraftReportCtrl"
         })
         ;
     }])

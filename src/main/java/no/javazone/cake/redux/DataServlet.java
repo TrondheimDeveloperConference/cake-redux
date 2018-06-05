@@ -20,8 +20,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import static java.util.Collections.singletonList;
 
 public class DataServlet extends HttpServlet {
     private SleepingpillCommunicator sleepingpillCommunicator;
@@ -63,6 +64,9 @@ public class DataServlet extends HttpServlet {
         } else if ("/sendForRoomSlotUpdate".equals(pathInfo)) {
             roomSlotUpdate(req,resp);
             resp.setContentType("application/json;charset=UTF-8");
+        } else if("/emailDraftSubmitters".equals(pathInfo)) {
+            String eventId = req.getParameter("eventId");
+            emailDraftSubmitters(eventId);
         }
 
     }
@@ -304,7 +308,38 @@ public class DataServlet extends HttpServlet {
                     .put("slots",JsonFactory.jsonArray())
                     .toJson(writer);
             //writer.append(emsCommunicator.allRoomsAndSlots(encEvent));
+        } else if ("/draftemails".equals(pathInfo)) {
+            Set<String> draftSubmitters = new FindDrafts().analyze(request.getParameter("eventId"));
+            JsonFactory.jsonArray()
+                    .addAll(new ArrayList<>(draftSubmitters))
+                    .toJson(writer);
         }
+    }
+
+
+    private void emailDraftSubmitters(String eventId) {
+        System.out.println("emailDraftSubmitters " + eventId);
+        Collection<String> draftSubmitters = new FindDrafts().analyze(eventId);
+        for (String draftSubmitter : draftSubmitters) {
+            System.out.println("emailing draft submitter " + draftSubmitter);
+            try {
+                SimpleEmail simpleEmail = new SimpleEmail();
+                simpleEmail.addTo(draftSubmitter);
+                AcceptorSetter.setupMailHeader(simpleEmail,"Have you forgotten to submit your proposal for Trondheim Developer Conference 2018?");
+                simpleEmail.setMsg("Hello,\n\n" +
+                        "We have started evaluating all submissions. " +
+                        "On this occasion, we have noticed that you have a submission that is still registered as a draft. \n" +
+                        "If you did not intend to submit this proposal, please ignore this message. \n" +
+                        "Otherwise, please log into https://submitit.trondheimdc.no and change your submission status as soon as possible such that we can consider your talk.\n\n" +
+                        "If you have any questions do not hesitate to contact us at connect@trondheimdc.no\n" +
+                        "\n" +
+                        "Thank you, the Trondheim Developer Conference program comittee");
+                MailSenderService.get().sendMail(MailSenderImplementation.create(simpleEmail));
+            } catch (EmailException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     private void appendUserFeedback(JsonObject oneTalkAsJson, Optional<String> feedback) {

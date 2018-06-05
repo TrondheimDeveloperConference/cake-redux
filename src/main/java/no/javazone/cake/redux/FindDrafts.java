@@ -1,9 +1,7 @@
-package no.javazone.cake.redux.util;
+package no.javazone.cake.redux;
 
-import no.javazone.cake.redux.mail.EmailManualSender;
 import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
 import org.jsonbuddy.JsonArray;
-import org.jsonbuddy.JsonObject;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -12,7 +10,7 @@ import java.util.Set;
 public class FindDrafts {
     private SleepingpillCommunicator sleepingpillCommunicator = new SleepingpillCommunicator();
 
-    public static void main(String[] args) throws Exception {
+/*    public static void main(String[] args) throws Exception {
         if (args.length < 1) {
             System.out.println("Use arg");
             return;
@@ -32,7 +30,7 @@ public class FindDrafts {
         for (String email : analyze) {
             EmailManualSender.send(email,content,subject);
         }
-    }
+    }*/
 
     public static boolean isValidEmail(String email) {
         if (Optional.ofNullable(email).orElse("").trim().isEmpty()) {
@@ -47,10 +45,8 @@ public class FindDrafts {
         return email.chars().noneMatch(Character::isWhitespace);
     }
 
-    public Set<String> analyze() {
-        String confid2018 = "346cb6bd41ea4812971927ffa33e0333";
-        JsonArray talks = sleepingpillCommunicator.allTalkFromConferenceSleepingPillFormat(confid2018);
-        System.out.println(talks.size());
+    public Set<String> analyze(String conferenceId) {
+        JsonArray talks = sleepingpillCommunicator.allTalkFromConferenceSleepingPillFormat(conferenceId);
         Set<String> drafts = new HashSet<>();
         Set<String> others = new HashSet<>();
 
