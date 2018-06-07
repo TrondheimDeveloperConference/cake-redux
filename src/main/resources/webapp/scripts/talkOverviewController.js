@@ -10,6 +10,7 @@
                 $scope.events = events;
                 $scope.talks = [];
                 if ($routeParams.eventSlug) {
+                    $scope.chosenEventSlug = $routeParams.eventSlug;
                     talkManagerService.talkList($routeParams.eventSlug).then(function(data) {
                         $scope.allTalks = data.data;
                         $scope.filterUpdated();

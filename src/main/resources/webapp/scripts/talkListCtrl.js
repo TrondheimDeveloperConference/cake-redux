@@ -18,6 +18,7 @@ angular.module('cakeReduxModule')
             eventFactory(function(data) {
                 $scope.events = data;
                 if ($routeParams.eventSlug) {
+                    $scope.chosenEventSlug = $routeParams.eventSlug;
                     $scope.chosenEvent = _.findWhere($scope.events,{slug: $routeParams.eventSlug});
                     talkList.chosenEvent = $scope.chosenEvent;
                     if ($scope.chosenEvent) {

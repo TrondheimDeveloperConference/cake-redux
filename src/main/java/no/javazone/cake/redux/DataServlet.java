@@ -333,7 +333,7 @@ public class DataServlet extends HttpServlet {
                         "Otherwise, please log into https://submitit.trondheimdc.no and change your submission status as soon as possible such that we can consider your talk.\n\n" +
                         "If you have any questions do not hesitate to contact us at connect@trondheimdc.no\n" +
                         "\n" +
-                        "Thank you, the Trondheim Developer Conference program comittee");
+                        "Thank you, the Trondheim Developer Conference program committee");
                 MailSenderService.get().sendMail(MailSenderImplementation.create(simpleEmail));
             } catch (EmailException e) {
                 e.printStackTrace();
