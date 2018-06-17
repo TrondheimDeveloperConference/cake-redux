@@ -7,10 +7,7 @@ import no.javazone.cake.redux.sleepingpill.SleepingpillCommunicator;
 import no.javazone.cake.redux.sleepingpill.SlotUpdaterService;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
-import org.jsonbuddy.JsonArray;
-import org.jsonbuddy.JsonFactory;
-import org.jsonbuddy.JsonNull;
-import org.jsonbuddy.JsonObject;
+import org.jsonbuddy.*;
 import org.jsonbuddy.parse.JsonParser;
 
 import javax.servlet.ServletException;
@@ -21,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
 
@@ -288,7 +286,11 @@ public class DataServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         if ("/talks".equals(pathInfo)) {
             String encEvent = request.getParameter("eventId");
-            String json = sleepingpillCommunicator.talkShortVersion(encEvent);
+            String json = JsonArray.fromNodeStream(sleepingpillCommunicator.talkShortVersion(encEvent)
+                    .nodeStream()
+                    .map(JsonObject.class::cast)
+                    .map(this::appendRatings).map(JsonNode.class::cast))
+                    .toJson();
 
             writer.append(json);
 
@@ -358,6 +360,13 @@ public class DataServlet extends HttpServlet {
         oneTalkAsJson.put("ratings",ratings);
         Optional<String> contact = FeedbackService.get().contactForTalk(encTalk);
         oneTalkAsJson.put("contactPhone",contact.orElse("Unknown"));
+    }
+
+    private JsonObject appendRatings(JsonObject oneTalkAsJson) {
+        JsonArray ratings = FeedbackService.get()
+                .ratingsForTalk(oneTalkAsJson.requiredString("ref"));
+        oneTalkAsJson.put("ratings",ratings);
+        return oneTalkAsJson;
     }
     
 

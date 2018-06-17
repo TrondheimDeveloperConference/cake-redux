@@ -4,19 +4,42 @@
     function TalkOverviewController($scope,$routeParams,talkManagerService,filterService) {
         (function init() {
             $scope.showFilters = true;
-            $scope.filters = filterService.filters;;
+            $scope.filters = filterService.filters;
 
             talkManagerService.eventMap.then(function(events) {
                 $scope.events = events;
                 $scope.talks = [];
                 if ($routeParams.eventSlug) {
                     $scope.chosenEventSlug = $routeParams.eventSlug;
-                    talkManagerService.talkList($routeParams.eventSlug).then(function(data) {
-                        $scope.allTalks = data.data;
-                        $scope.filterUpdated();
-                    });
+                    talkManagerService.talkList($routeParams.eventSlug)
+                        .then(function(data) {
+                            var allTalks = data.data;
+                            for(var i = 0; i<allTalks.length; i++) {
+                                var talk = allTalks[i];
+                                talk.score = talk.ratings
+                                    .reduce(function(acc, rating){
+                                        var r = rating.info;
+                                        if(r === '+') {
+                                            return acc + 1;
+                                        } else if (r === '++') {
+                                            return acc + 2;
+                                        } else if(r === '-') {
+                                            return acc - 1;
+                                        } else if (r === '--') {
+                                            return acc - 2;
+                                        } else {
+                                            return acc;
+                                        }
+                                    }, 0)
+                            }
+
+                            $scope.allTalks = allTalks.sort(function(a, b) {
+                                return b.score - a.score
+                            });
+                            $scope.filterUpdated();
+                        });
                 } else {
-                   $scope.allTalks = [];
+                    $scope.allTalks = [];
                 }
             });
         }());

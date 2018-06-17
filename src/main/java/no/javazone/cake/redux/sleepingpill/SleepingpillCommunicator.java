@@ -12,7 +12,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -47,12 +46,12 @@ public class SleepingpillCommunicator {
     }
 
 
-    public String talkShortVersion(String conferenceid) {
+    public JsonArray talkShortVersion(String conferenceid) {
         JsonArray result = JsonArray.fromNodeStream(allSubmittedTalksFromConference(conferenceid)
                 .objectStream()
                 .map(SleepingpillCommunicator::talkObj));
 
-        return jsonHackFix(result.toJson());
+        return result;
     }
 
     public static String jsonHackFix(String jsonstr) {
