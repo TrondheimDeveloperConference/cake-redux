@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
@@ -271,13 +272,19 @@ public class DataServlet extends HttpServlet {
         String state = update.requiredString("state");
         String lastModified = update.stringValue("lastModified").orElse("xx");
 
-        List<String> taglist = tags.strings();
-        List<String> keywordlist = keywords.strings();
+        List<String> taglist = unique(tags.stringStream());
+        List<String> keywordlist = unique(keywords.stringStream());
 
         //String newTalk = emsCommunicator.update(ref, taglist, state, lastModified,computeAccessType(req));
         String newTalk = sleepingpillCommunicator.update(ref, taglist, keywordlist,state, lastModified,computeAccessType(req));
         resp.getWriter().append(newTalk);
 
+    }
+
+    private List<String> unique(Stream<String> items) {
+        return items.map(String::toLowerCase)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
