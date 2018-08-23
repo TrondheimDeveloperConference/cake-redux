@@ -75,6 +75,7 @@ public class SleepingpillCommunicator {
             }
             JsonObject speaker = (JsonObject) part;
             String speakerEmail = speaker.requiredString("email");
+            if(speakerEmail.isEmpty()) continue;
             try {
                 speakerEmail = URLEncoder.encode(speakerEmail,"UTF-8");
             } catch (UnsupportedEncodingException ignored) {}
@@ -416,6 +417,14 @@ public class SleepingpillCommunicator {
         JsonObject payload = JsonFactory.jsonObject()
                 .put("startTime", JsonFactory.jsonObject().put("value", startTime.toString()).put("privateData", false))
                 .put("endTime", JsonFactory.jsonObject().put("value", endTime.toString()).put("privateData", false));
+        sendTalkUpdate(talkref,JsonFactory.jsonObject().put("data",payload));
+    }
+
+    public void updateSlotLength(String talkref, int length, UserAccessType userAccessType) {
+        checkWriteAccess(userAccessType);
+
+        JsonObject payload = JsonFactory.jsonObject()
+                .put("length", JsonFactory.jsonObject().put("value", length).put("privateData", false));
         sendTalkUpdate(talkref,JsonFactory.jsonObject().put("data",payload));
     }
 
