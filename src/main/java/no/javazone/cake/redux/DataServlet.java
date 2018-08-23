@@ -57,6 +57,9 @@ public class DataServlet extends HttpServlet {
         } else if ("/updateroomslot".equals(pathInfo)) {
             updateRoomSlot(req,resp);
             resp.setContentType("application/json;charset=UTF-8");
+        } else if ("/updateSlotLength".equals(pathInfo)) {
+            updateSlotLength(req,resp);
+            resp.setContentType("application/json;charset=UTF-8");
         } else if ("/readSlotForUpdate".equals(pathInfo)) {
             readSlotForUpdate(req,resp);
             resp.setContentType("application/json;charset=UTF-8");
@@ -105,6 +108,16 @@ public class DataServlet extends HttpServlet {
         }
 
         JsonFactory.jsonObject().toJson(resp.getWriter());
+    }
+
+    private void updateSlotLength(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        JsonObject update;
+        try (InputStream inputStream = req.getInputStream()) {
+            update = JsonParser.parseToObject(inputStream);
+        }
+        String talkref = update.requiredString("talkref");
+        UserAccessType userAccessType = computeAccessType(req);
+        sleepingpillCommunicator.updateSlotLength(talkref, (int) update.requiredLong("length"), userAccessType);
     }
 
     private void publishChanges(HttpServletRequest req, HttpServletResponse resp) throws IOException {

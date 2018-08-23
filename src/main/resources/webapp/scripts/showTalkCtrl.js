@@ -25,17 +25,17 @@ angular.module('cakeReduxModule')
                 //talkManagerService.talkList($scope.aTalk.eventSlug);
                 if ($scope.aTalk) {
                     document.title = $scope.aTalk.title;
-                    roomSlotFactory.roomsSlotsForEvent($scope.aTalk.eventId).then(function(rs) {
+                   /* roomSlotFactory.roomsSlotsForEvent($scope.aTalk.eventId).then(function(rs) {
                         $scope.roomsSlots = rs;
                     })
-
+*/
                 }
 
             };
 
             $scope.toCommaSeperated = function(arr) {
                 return _.reduce(arr,function(a,b) {
-                   return a + ", " + b;
+                    return a + ", " + b;
                 });
             }
 
@@ -194,6 +194,22 @@ angular.module('cakeReduxModule')
                 }).success(function (data) {
                     window.location.reload();
                 });
+            };
+
+            $scope.newSessionLenght = function () {
+                var newLength = prompt('Ny lengde');
+                if(newLength) {
+                    $http({
+                        method: "POST",
+                        url: "data/updateSlotLength",
+                        data: {
+                            talkref: talkRef,
+                            length: parseInt(newLength, 10)
+                        }
+                    }).success(function (data) {
+                        window.location.reload();
+                    });
+                }
             };
 
             $scope.newRoom = function () {
