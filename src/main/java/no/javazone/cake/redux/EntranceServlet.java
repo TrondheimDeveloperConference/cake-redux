@@ -75,7 +75,7 @@ public class EntranceServlet extends HttpServlet {
         String username = null;
         String userEmail = null;
         JsonObject userInfo = JsonParser.parseToObject(json);
-        username = userInfo.requiredString("name");
+        username = userInfo.stringValue("name").orElse("");
         userEmail = userInfo.requiredString("email");
 
         // When using not using G+, name can be blank
