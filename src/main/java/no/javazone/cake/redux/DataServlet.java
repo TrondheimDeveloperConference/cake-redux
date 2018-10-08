@@ -246,7 +246,7 @@ public class DataServlet extends HttpServlet {
     private static UserAccessType computeAccessType(HttpServletRequest request) {
         String fullusers = Optional.ofNullable(Configuration.fullUsers()).orElse("");
         if (Optional.ofNullable(request.getSession().getAttribute("username"))
-            .filter(un -> fullusers.contains((String) un))
+           // .filter(un -> fullusers.contains((String) un))
             .isPresent()) {
             return UserAccessType.FULL;
         }
