@@ -7,12 +7,8 @@ import java.util.Optional;
 
 public class UserFeedbackCommunicator {
 
-    public Optional<String> feedback(Optional<String> emslocation) {
-        if (!emslocation.isPresent()) {
-            return Optional.empty();
-        }
-
-        String urlToDevNull = convertFromEmsToDevNullUrl(emslocation.get());
+    public Optional<String> feedback(String conferenceId, String talkId) {
+        String urlToDevNull = convertFromEmsToDevNullUrl(conferenceId, talkId);
         URLConnection urlConnection = CommunicatorHelper.openConnection(urlToDevNull, false);
         try (InputStream is = CommunicatorHelper.openStream(urlConnection)){
             return Optional.of(CommunicatorHelper.toString(is));
@@ -21,9 +17,8 @@ public class UserFeedbackCommunicator {
         }
     }
 
-    private String convertFromEmsToDevNullUrl(String emsUrl) {
-        String talk = emsUrl.substring(emsUrl.indexOf("/events"));
-        return Configuration.devnullLocation() + talk + "/feedbacks";
+    private String convertFromEmsToDevNullUrl(String conferenceId, String sessionId) {
+        return Configuration.devnullLocation() + "/events/" + conferenceId + "/sessions/" + sessionId + "/feedbacks";
     }
 
 }

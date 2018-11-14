@@ -66,7 +66,9 @@ public class SleepingpillCommunicator {
 
     public JsonObject oneTalkAsJson(String talkid) {
         JsonObject talk = oneTalkStripped(talkid);
-        JsonArray allConferences = parseJsonFromConnection(openConnection(Configuration.sleepingPillBaseLocation() + "/data/conference")).requiredArray("conferences");
+        JsonArray allConferences = parseJsonFromConnection(
+                openConnection(Configuration.sleepingPillBaseLocation() + "/data/conference"))
+                .requiredArray("conferences");
 
         JsonArray speakersArr = talk.requiredArray("speakers");
         for (JsonNode part : speakersArr) {
@@ -154,9 +156,10 @@ public class SleepingpillCommunicator {
         talkob.put("summary","");
         talkob.put("level",readValueFromProp(jsonObject,"level"));
         talkob.put("tags",readValueFromProp(jsonObject,"tags",JsonFactory.jsonArray()));
-        talkob.put("published",new Boolean(Arrays.asList("APPROVED","HISTORIC").contains(jsonObject.requiredString("status"))).toString());
+        talkob.put("published", Boolean.toString(Arrays.asList("APPROVED", "HISTORIC").contains(jsonObject.requiredString("status"))));
         talkob.put("body",readValueFromProp(jsonObject,"abstract"));
         talkob.put("ref",jsonObject.requiredString("id"));
+        talkob.put("conferenceId",jsonObject.requiredString("conferenceId"));
         talkob.put("hasUnpublishedValues",jsonObject.requiredObject("sessionUpdates")
                 .requiredBoolean("hasUnpublishedChanges")
                 ? "Yes" : "No");

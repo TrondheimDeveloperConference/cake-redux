@@ -59,8 +59,7 @@ public class SpeakerMailSender {
     }
 
     public Set<String> allMailsFrom(String event) {
-        String allTalksStr = sleepingpillCommunicator.talkShortVersion(event);
-        JsonArray allTalks = JsonParser.parseToArray(allTalksStr);
+        JsonArray allTalks = sleepingpillCommunicator.talkShortVersion(event);
         Set<String> res = allTalks.nodeStream().flatMap(jn -> {
             JsonObject obj = (JsonObject) jn;
             return obj.arrayValue("speakers").orElse(JsonFactory.jsonArray()).nodeStream()
