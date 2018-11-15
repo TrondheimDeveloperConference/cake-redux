@@ -9,6 +9,7 @@ import org.apache.commons.mail.SimpleEmail;
 import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.JsonFactory;
 import org.jsonbuddy.JsonObject;
+import org.jsonbuddy.parse.JsonParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,10 +22,12 @@ import java.util.Optional;
 public class AcceptorSetter {
     //private EmsCommunicator emsCommunicator;
     private SleepingpillCommunicator sleepingpillCommunicator;
+    private UserFeedbackCommunicator userFeedbackCommunicator;
 
-    public AcceptorSetter(SleepingpillCommunicator sleepingpillCommunicator) {
+    public AcceptorSetter(SleepingpillCommunicator sleepingpillCommunicator,
+                          UserFeedbackCommunicator userFeedbackCommunicator) {
         this.sleepingpillCommunicator = sleepingpillCommunicator;
-        //this.emsCommunicator = emsCommunicator;
+        this.userFeedbackCommunicator = userFeedbackCommunicator;
     }
 
     public String accept(JsonArray talks,UserAccessType userAccessType) {
@@ -66,6 +69,20 @@ public class AcceptorSetter {
                 String encodedTalkRef = talks.get(i,JsonObject.class).requiredString("ref");
                 JsonObject jsonTalk = sleepingpillCommunicator.oneTalkStripped(encodedTalkRef);
 
+                String conferenceId = jsonTalk.requiredString("conferenceId");
+                Optional<String> feedback = userFeedbackCommunicator.feedback(conferenceId, encodedTalkRef);
+                if (feedback.isPresent()) {
+                    JsonObject jsonFeedback = JsonParser.parseToObject(feedback.get());
+                    JsonObject paperfeedback = jsonFeedback.requiredObject("session").requiredObject("paper");
+                    long green = paperfeedback.requiredLong("green");
+                    long red = paperfeedback.requiredLong("red");
+                    System.out.println("Green " + green + " red " + red);
+                    jsonTalk.put("papergreen", green);
+                    jsonTalk.put("paperred", red);
+                } else {
+                    System.out.println("No feedback");
+                    return "";
+                }
                 accept.put("title",jsonTalk.requiredString("title"));
 
                 List<String> tags = jsonTalk.requiredArray("tags").strings();
@@ -177,6 +194,22 @@ public class AcceptorSetter {
         message = replaceAll(message,"#talkType#", talkType);
         message = replaceAll(message,"#submititLink#", submitLink);
         message = replaceAll(message,"#confirmLink#", confirmLocation);
+
+        Optional<Long> paperred = jsonTalk.longValue("paperred");
+        Optional<Long> papergreen = jsonTalk.longValue("papergreen");
+        System.out.println(paperred + " red");
+        System.out.println(papergreen + " green");
+        if(papergreen.isPresent() && paperred.isPresent()) {
+            long mehCount = paperred.get();
+            long awesomeCount = papergreen.get();
+            double total = mehCount + awesomeCount;
+            long mehRatio = (long)((mehCount / total) * 100);
+            long awesomeRatio = 100 - mehRatio;
+            System.out.println(mehRatio + " red");
+            System.out.println(awesomeRatio + " green");
+            message = replaceAll(message,"#paperred#", String.valueOf(mehRatio));
+            message = replaceAll(message,"#papergreen#", String.valueOf(awesomeRatio));
+        }
 
         for (int pos=message.indexOf("#");pos!=-1;pos=message.indexOf("#",pos+1)) {
             if (pos == message.length()-1) {

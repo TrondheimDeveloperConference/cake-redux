@@ -394,7 +394,7 @@ public class DataServlet extends HttpServlet {
     public void init() throws ServletException {
         sleepingpillCommunicator = new SleepingpillCommunicator();
         userFeedbackCommunicator = new UserFeedbackCommunicator();
-        acceptorSetter = new AcceptorSetter(sleepingpillCommunicator);
+        acceptorSetter = new AcceptorSetter(sleepingpillCommunicator, userFeedbackCommunicator);
     }
 
 
