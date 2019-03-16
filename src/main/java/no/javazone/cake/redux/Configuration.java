@@ -187,6 +187,7 @@ public class Configuration {
     public static String sleepingPillBaseLocation() {
         return readConf("sleepingPillBaseLocation","http://localhost:8082");
     }
+
     public static String devnullLocation() {
         return readConf("devnullLocation","http://localhost:8084/devnull");
     }
@@ -212,13 +213,25 @@ public class Configuration {
     }
 
     public static String mailFrom() {
-        return readConf("mailFrom", "program@java.no");
+        return readConf("mailFrom", "connect@trondheimdc.no");
     }
     public static String mailFromName() {
         return readConf("mailFromName", "Trondheim Developer Conference program commitee");
     }
 
+    public static String slackAppId() {
+        return readConf("slackAppId",null);
+    }
+
+    public static String slackClientSecret() {
+        return readConf("slackClientSecret",null);
+    }
+
+    public static String slackAuthChannel() {
+        return readConf("slackAuthChannel",null);
+    }
+
     public static String bcc() {
-        return readConf("bcc", "program-auto@java.no");
+        return readConf("bcc", "connect@trondheimdc.no");
     }
 }

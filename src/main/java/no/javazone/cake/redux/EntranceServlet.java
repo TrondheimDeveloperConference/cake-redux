@@ -126,7 +126,7 @@ public class EntranceServlet extends HttpServlet {
         resp.setContentType("text/html");
         writer.append("<html><body>");
         writer.append("<p>You are now logged in as ").append(userid).append("</p>");
-        writer.append("<p><a href='secured/#/'>To cake</a></p>");
+        writer.append("<p><a href='/secured/#/'>To cake</a></p>");
         writer.append("</body></html>");
     }
 
