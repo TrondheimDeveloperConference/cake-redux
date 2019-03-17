@@ -231,6 +231,10 @@ public class Configuration {
         return readConf("slackAuthChannel",null);
     }
 
+    public static String slackApiToken() {
+        return readConf("slackApiToken",null);
+    }
+
     public static String bcc() {
         return readConf("bcc", "connect@trondheimdc.no");
     }
