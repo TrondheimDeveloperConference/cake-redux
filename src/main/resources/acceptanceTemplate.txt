@@ -1,6 +1,6 @@
 Dear #speakername#
 
-We are pleased to inform you that your #talkType#, "#title#", has been accepted for Trondheim Developer Conference 2018!
+We are pleased to inform you that your #talkType#, "#title#", has been accepted for Trondheim Developer Conference 2019!
 
 
 CONFIRM YOUR TALK
@@ -18,7 +18,7 @@ Note that this #talkType# is accepted based upon both content and presenter as d
 UPDATING YOUR TALK
 -----------------------------------
 
-Once you have confirmed that you are attending, we will publish your #talkType# in the agenda at https://2018.trondheimdc.no.
+Once you have confirmed that you are attending, we will publish your #talkType# in the agenda at https://2019.trondheimdc.no.
 You can continue to edit your abstract and should therefore make sure that the following parts are updated via the below link:
 
 1) Be sure to upload a good quality picture or portrait so that people know what you look like!
@@ -32,12 +32,12 @@ https://submitit.trondheimdc.no
 
 OTHER PRACTICAL INFORMATION
 -----------------------------------
-Sessions have a timespan of 30 minutes and it’s not possible to extend the time.
-Since the sessions are so short we discurrage live coding.
+Session length is strictly enforced and it’s not possible to extend the time.
+Since the sessions are so short we discourage live coding.
 
-If you want to present from a computer we provide please send us the slides on email with the subject «TDC2018 talk».
+If you want to present from a computer we provide please send us the slides on email with the subject «TDC2019 talk».
 
-For more information, see: https://2018.trondheimdc.no/speaker.html
+For more information, see: https://2019.trondheimdc.no/speaker.html
 
 As a speaker you do not need to buy a ticket. You will get your ticket at the speakers dinner or when arriving at the conference.
 
