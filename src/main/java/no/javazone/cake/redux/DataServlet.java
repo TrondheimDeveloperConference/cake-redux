@@ -347,7 +347,7 @@ public class DataServlet extends HttpServlet {
             try {
                 SimpleEmail simpleEmail = new SimpleEmail();
                 simpleEmail.addTo(draftSubmitter);
-                AcceptorSetter.setupMailHeader(simpleEmail,"Have you forgotten to submit your proposal for Trondheim Developer Conference 2018?");
+                AcceptorSetter.setupMailHeader(simpleEmail,"Have you forgotten to submit your proposal for Trondheim Developer Conference 2019?");
                 simpleEmail.setMsg("Hello,\n\n" +
                         "We have started evaluating all submissions. " +
                         "On this occasion, we have noticed that you have a submission that is still registered as a draft. \n" +
